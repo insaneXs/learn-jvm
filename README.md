@@ -1,0 +1,55 @@
+# read-jvm
+jvm source code read
+
+## Hotspot结构
+- agent
+- make 
+- src  
+    - cpu
+    - os 
+    - os_cpu 
+    - share
+        - tools
+        - vm  
+            - adc
+            - asm  
+            - c1
+            - ci  
+            - classfile  
+            - code  
+            - code  
+            - compiler 
+            - gc_implementation  
+            - gc_interface  
+            - libadt  
+            - memory
+            - oops  
+            - opto  
+            - precompiled  
+            - prims  负责对外提供访问JVM内部的接口
+                - JNI Java本地调用
+                - JVM 
+                - JVMTI  JVM Tool Interface 虚拟机工具接口 提供外部监视和代理Java应用程序的能力
+                - Perf
+            - runtime  运行时模块
+                - Thread 线程相关功能
+                - Arguments 保存参数
+                - StubRoutines\StubCodeGenerator  
+                - Frame 栈帧  
+                - CompilationPolicy 编译策略  
+                - Init 初始化  
+                - VmThread 虚拟机线程 可以派生出其他线程  
+                - VMOperation VM相关操作
+            - services 提供JMX(Java Management Extensions)服务
+                - Management JMX的底层实现
+                - MemoryService 内存管理服务
+                - MemoryPool 内存池
+                - MemoryManager 内存管理器，负责管理一个或多个内存池，GC也是MemoryManager的一种
+                - RuntimeService 提供Java运行时的性能监控和管理服务
+                - ThreadService 提供线程的性能监控和管理服务
+                - ClassLoadingService 针对类加载的性能监控和管理  
+                - AttachListener 
+                - HeapDumper 提供堆的转储功能
+            - shark  
+            - trace  
+            - utilities  
