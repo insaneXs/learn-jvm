@@ -3310,25 +3310,25 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
 
   // Initialize the output stream module
-  ostream_init();
+  ostream_init();  //初始化输出流模块
 
-  // Process java launcher properties.
-  Arguments::process_sun_java_launcher_properties(args);
+// Process java launcher properties.
+  Arguments::process_sun_java_launcher_properties(args); //配置启动器属性
 
   // Initialize the os module before using TLS
-  os::init();
+  os::init(); //初始化os模块
 
   // Initialize system properties.
-  Arguments::init_system_properties();
+  Arguments::init_system_properties(); //初始系统属性
 
   // So that JDK version can be used as a discrimintor when parsing arguments
   JDK_Version_init();
 
   // Update/Initialize System properties after JDK version number is known
-  Arguments::init_version_specific_system_properties();
+  Arguments::init_version_specific_system_properties(); //初始系统属性
 
   // Parse arguments
-  jint parse_result = Arguments::parse(args);
+  jint parse_result = Arguments::parse(args); //解析参数
   if (parse_result != JNI_OK) return parse_result;
 
   os::init_before_ergo();
@@ -3354,17 +3354,17 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   TraceTime timer("Create VM", TraceStartupTime);
 
   // Initialize the os module after parsing the args
-  jint os_init_2_result = os::init_2();
+  jint os_init_2_result = os::init_2(); //再次init
   if (os_init_2_result != JNI_OK) return os_init_2_result;
 
   jint adjust_after_os_result = Arguments::adjust_after_os();
   if (adjust_after_os_result != JNI_OK) return adjust_after_os_result;
 
   // intialize TLS
-  ThreadLocalStorage::init();
+  ThreadLocalStorage::init(); //初始化TLS
 
   // Initialize output stream logging
-  ostream_init_log();
+  ostream_init_log(); //
 
   // Convert -Xrun to -agentlib: if there is no JVM_OnLoad
   // Must be before create_vm_init_agents()
@@ -3374,7 +3374,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Launch -agentlib/-agentpath and converted -Xrun agents
   if (Arguments::init_agents_at_startup()) {
-    create_vm_init_agents();
+    create_vm_init_agents(); //加载agents库
   }
 
   // Initialize Threads state
@@ -3383,10 +3383,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   _number_of_non_daemon_threads = 0;
 
   // Initialize global data structures and create system classes in heap
-  vm_init_globals();
+  vm_init_globals(); //初始化全局的数据结构
 
   // Attach the main thread to this os thread
-  JavaThread* main_thread = new JavaThread();
+  JavaThread* main_thread = new JavaThread(); //创建JavaThread
   main_thread->set_thread_state(_thread_in_vm);
   // must do this before set_active_handles and initialize_thread_local_storage
   // Note: on solaris initialize_thread_local_storage() will (indirectly)
@@ -3411,10 +3411,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->create_stack_guard_pages();
 
   // Initialize Java-Level synchronization subsystem
-  ObjectMonitor::Initialize() ;
+  ObjectMonitor::Initialize() ; // 初始化Java语言级别的同步机制
 
   // Initialize global modules
-  jint status = init_globals();
+  jint status = init_globals(); // 初始化全局模块
   if (status != JNI_OK) {
     delete main_thread;
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
@@ -3432,11 +3432,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Any JVMTI raw monitors entered in onload will transition into
   // real raw monitor. VM is setup enough here for raw monitor enter.
-  JvmtiExport::transition_pending_onload_raw_monitors();
+  JvmtiExport::transition_pending_onload_raw_monitors(); // JVMTI 转换raw monitor
 
   // Create the VMThread
   { TraceTime timer("Start VMThread", TraceStartupTime);
-    VMThread::create();
+    VMThread::create(); //创建VMThread
     Thread* vmthread = VMThread::vm_thread();
 
     if (!os::create_thread(vmthread, os::vm_thread))
@@ -3444,7 +3444,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
     // Wait for the VM thread to become ready, and VMThread::run to initialize
     // Monitors can have spurious returns, must always check another state flag
-    {
+    { //等待线程创建完成
       MutexLocker ml(Notify_lock);
       os::start_thread(vmthread);
       while (vmthread->active_handles() == NULL) {
@@ -3457,7 +3457,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (VerifyDuringStartup) {
     // Make sure we're starting with a clean slate.
     VM_Verify verify_op;
-    VMThread::execute(&verify_op);
+    VMThread::execute(&verify_op);//
   }
 
   EXCEPTION_MARK;
@@ -3472,12 +3472,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
-  JvmtiExport::enter_start_phase();
+  JvmtiExport::enter_start_phase(); //通知JVMTI 进入启动阶段
 
   // Notify JVMTI agents that VM has started (JNI is up) - nop if no agents.
-  JvmtiExport::post_vm_start();
+  JvmtiExport::post_vm_start(); //通知JVMTI启动完成
 
-  {
+  { //加载基本的类
     TraceTime timer("Initialize java.lang classes", TraceStartupTime);
 
     if (EagerXrunInit && Arguments::init_libraries_at_startup()) {
@@ -3544,7 +3544,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // compiler does not get loaded through java.lang.Compiler).  "java -version" with the
   // hotspot vm says "nojit" all the time which is confusing.  So, we reset it here.
   // This should also be taken out as soon as 4211383 gets fixed.
-  reset_vm_info_property(CHECK_0);
+  reset_vm_info_property(CHECK_0); //修改java.vm.info 属性
 
   quicken_jni_functions();
 
@@ -3555,9 +3555,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Set flag that basic initialization has completed. Used by exceptions and various
   // debug stuff, that does not work until all basic classes have been initialized.
-  set_init_completed();
+  set_init_completed();//设置初始化完成标志
 
-  Metaspace::post_initialize();
+  Metaspace::post_initialize();//元空间初始化
 
 #ifndef USDT2
   HS_DTRACE_PROBE(hotspot, vm__init__end);
@@ -3598,13 +3598,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
-  JvmtiExport::enter_live_phase();
+  JvmtiExport::enter_live_phase(); //通知JVMTI 进入live阶段
 
   // Signal Dispatcher needs to be started before VMInit event is posted
-  os::signal_init();
+  os::signal_init();//初始化Signal Dispatcher
 
   // Start Attach Listener if +StartAttachListener or it can't be started lazily
-  if (!DisableAttachMechanism) {
+  if (!DisableAttachMechanism) { //创建Attach Listener
     AttachListener::vm_start();
     if (StartAttachListener || AttachListener::init_at_startup()) {
       AttachListener::init();
@@ -3615,17 +3615,17 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Must be done in the JVMTI live phase so that for backward compatibility the JDWP
   // back-end can launch with -Xdebug -Xrunjdwp.
   if (!EagerXrunInit && Arguments::init_libraries_at_startup()) {
-    create_vm_init_libraries();
+    create_vm_init_libraries(); //初始化 -Xrun指定的 agent库
   }
 
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
-  JvmtiExport::post_vm_initialized();
+  JvmtiExport::post_vm_initialized(); //通知JVMTI VM 初始化完成
 
   if (TRACE_START() != JNI_OK) {
     vm_exit_during_initialization("Failed to start tracing backend.");
   }
 
-  if (CleanChunkPoolAsync) {
+  if (CleanChunkPoolAsync) { //开启线程异步清理 ChunkPool
     Chunk::start_chunk_pool_cleaner_task();
   }
 
@@ -3634,7 +3634,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   CompileBroker::compilation_init();
 #endif
 
-  if (EnableInvokeDynamic) {
+  if (EnableInvokeDynamic) { //加载动态代理相关的类文件
     // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.
     // It is done after compilers are initialized, because otherwise compilations of
     // signature polymorphic MH intrinsics can be missed
@@ -3660,13 +3660,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
-  BiasedLocking::init();
+  BiasedLocking::init(); //初始化偏向锁
 
 #if INCLUDE_RTM_OPT
   RTMLockingCounters::init();
 #endif
 
-  if (JDK_Version::current().post_vm_init_hook_enabled()) {
+  if (JDK_Version::current().post_vm_init_hook_enabled()) { //调用相关钩子
     call_postVMInitHook(THREAD);
     // The Java side of PostVMInitHook.run must deal with all
     // exceptions and provide means of diagnosis.
@@ -3690,7 +3690,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // Give os specific code one last chance to start
-  os::init_3();
+  os::init_3(); //os模块再次初始化
 
   create_vm_timer.end();
 #ifdef ASSERT
