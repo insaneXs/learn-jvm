@@ -412,7 +412,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         /* scan for data model arguments and remove from argument list;
            last occurrence determines desired data model */
         for (i=1; i < argc; i++) {
-    
+
           if (JLI_StrCmp(argv[i], "-J-d64") == 0 || JLI_StrCmp(argv[i], "-d64") == 0) {
             wanted = 64;
             continue;
@@ -886,21 +886,21 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
     }
 
     ifn->CreateJavaVM = (CreateJavaVM_t)
-        dlsym(libjvm, "JNI_CreateJavaVM");
+        dlsym(libjvm, "JNI_CreateJavaVM"); //ifn的 CreateJavaVM 函数指针指向 JNI_CreateJavaVM 函数
     if (ifn->CreateJavaVM == NULL) {
         JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
         return JNI_FALSE;
     }
 
     ifn->GetDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs_t)
-        dlsym(libjvm, "JNI_GetDefaultJavaVMInitArgs");
+        dlsym(libjvm, "JNI_GetDefaultJavaVMInitArgs"); //ifn的 GetDefaultJavaVMInitArgs_t 函数指针指向 JNI_GetDefaultJavaVMInitArgs 函数
     if (ifn->GetDefaultJavaVMInitArgs == NULL) {
         JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
         return JNI_FALSE;
     }
 
     ifn->GetCreatedJavaVMs = (GetCreatedJavaVMs_t)
-        dlsym(libjvm, "JNI_GetCreatedJavaVMs");
+        dlsym(libjvm, "JNI_GetCreatedJavaVMs");//ifn的 GetCreatedJavaVMs_t 函数指针指向 JNI_GetCreatedJavaVMs
     if (ifn->GetCreatedJavaVMs == NULL) {
         JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
         return JNI_FALSE;
@@ -1021,17 +1021,21 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
     int rslt;
 #ifndef __solaris__
     pthread_t tid;
+    //声明线程属性
     pthread_attr_t attr;
+    //初始化线程属性并设置相关属性值
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
+    //设置线程栈深度
     if (stack_size > 0) {
       pthread_attr_setstacksize(&attr, stack_size);
     }
 
-    if (pthread_create(&tid, &attr, (void *(*)(void*))continuation, (void*)args) == 0) {
+    //创建线程并执行方法
+    if (pthread_create(&tid, &attr, (void *(*)(void*))continuation, (void*)args) == 0) { //创建线程 并将运行函数的起始地址和运行参数传入
       void * tmp;
-      pthread_join(tid, &tmp);
+      pthread_join(tid, &tmp);//阻塞当前线程 等待新线程运行结束返回
       rslt = (int)tmp;
     } else {
      /*
@@ -1072,12 +1076,15 @@ void SetJavaLauncherPlatformProps() {
 #endif /* __linux__ */
 }
 
+//初始化虚拟机
 int
 JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
         int argc, char **argv,
         int mode, char *what, int ret)
-{
+{   
+    //SplashScreen是启动画面 显示启动画面 
     ShowSplashScreen();
+    //创建新线程 并由新线程执行方法
     return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
 }
 

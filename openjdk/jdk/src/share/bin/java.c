@@ -190,7 +190,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     char *cpath = 0;
     char *main_class = NULL;
     int ret;
-    InvocationFunctions ifn;
+    InvocationFunctions ifn; //和创建虚拟机相关的结构体 指向三个关键的函数
     jlong start, end;
     char jvmpath[MAXPATHLEN];
     char jrepath[MAXPATHLEN];
@@ -205,7 +205,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     _ergo_policy = ergo;
 
     InitLauncher(javaw);
-    DumpState();
+    DumpState(); //打印相关状态
     if (JLI_IsTraceLauncher()) {
         int i;
         printf("Command line args:\n");
@@ -232,12 +232,12 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
      *     (Note: This side effect has been disabled.  See comment on
      *     bugid 5030265 below.)
      */
-    SelectVersion(argc, argv, &main_class);
+    SelectVersion(argc, argv, &main_class); //版本检测
 
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
                                jvmpath, sizeof(jvmpath),
-                               jvmcfg,  sizeof(jvmcfg));
+                               jvmcfg,  sizeof(jvmcfg));//解析相关环境 获取jre路径、jvmlib库和jvm.cfg
 
     if (!IsJavaArgs()) {
         SetJvmEnvironment(argc,argv);
@@ -250,7 +250,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         start = CounterGet();
     }
 
-    if (!LoadJavaVM(jvmpath, &ifn)) {
+    if (!LoadJavaVM(jvmpath, &ifn)) { //加载 主要是从jvmlib库中解析函数地址 赋值给ifn
         return(6);
     }
 
@@ -272,7 +272,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         }
     } else {
         /* Set default CLASSPATH */
-        cpath = getenv("CLASSPATH");
+        cpath = getenv("CLASSPATH"); //添加CLASSPATH
         if (cpath == NULL) {
             cpath = ".";
         }
@@ -288,11 +288,11 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     }
 
     /* Override class path if -jar flag was specified */
-    if (mode == LM_JAR) {
+    if (mode == LM_JAR) { //如果是java -jar 则覆盖classpath
         SetClassPath(what);     /* Override class path */
     }
 
-    /* set the -Dsun.java.command pseudo property */
+    /* set the -Dsun.java.command pseudo property */ //解析特殊属性
     SetJavaCommandLineProp(what, argc, argv);
 
     /* Set the -Dsun.java.launcher pseudo property */
@@ -371,7 +371,7 @@ JavaMain(void * _args)
 
     RegisterThread();
 
-    /* Initialize the virtual machine */
+    /* 初始化JVM */
     start = CounterGet();
     if (!InitializeJVM(&vm, &env, &ifn)) {
         JLI_ReportErrorMessage(JVM_ERROR1);
@@ -441,7 +441,7 @@ JavaMain(void * _args)
      * This method also correctly handles launching existing JavaFX
      * applications that may or may not have a Main-Class manifest entry.
      */
-    mainClass = LoadMainClass(env, mode, what);
+    mainClass = LoadMainClass(env, mode, what);//加载mainClass
     CHECK_EXCEPTION_NULL_LEAVE(mainClass);
     /*
      * In some cases when launching an application that needs a helper, e.g., a
@@ -449,7 +449,7 @@ JavaMain(void * _args)
      * applications own main class but rather a helper class. To keep things
      * consistent in the UI we need to track and report the application main class.
      */
-    appClass = GetApplicationClass(env);
+    appClass = GetApplicationClass(env); //获取application class
     NULL_CHECK_RETURN_VALUE(appClass, -1);
     /*
      * PostJVMInit uses the class name as the application name for GUI purposes,
@@ -458,7 +458,7 @@ JavaMain(void * _args)
      * instead of mainClass as that may be a launcher or helper class instead
      * of the application class.
      */
-    PostJVMInit(env, appClass, vm);
+    PostJVMInit(env, appClass, vm); // JVM 初始化后置处理
     /*
      * The LoadMainClass not only loads the main class, it will also ensure
      * that the main method's signature is correct, therefore further checking
@@ -466,22 +466,22 @@ JavaMain(void * _args)
      * stacks are not in the application stack trace.
      */
     mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                       "([Ljava/lang/String;)V");
+                                       "([Ljava/lang/String;)V"); //获取main class的 main(String[] args)方法
     CHECK_EXCEPTION_NULL_LEAVE(mainID);
 
     /* Build platform specific argument array */
-    mainArgs = CreateApplicationArgs(env, argv, argc);
-    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
+    mainArgs = CreateApplicationArgs(env, argv, argc); //封装 main(String[] args) 方法的参数args
+    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);1
 
     /* Invoke main method. */
-    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
+    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs); //调用main(String args)方法
 
     /*
      * The launcher's exit code (in the absence of calls to
      * System.exit) will be non-zero if main threw an exception.
      */
-    ret = (*env)->ExceptionOccurred(env) == NULL ? 0 : 1;
-    LEAVE();
+    ret = (*env)->ExceptionOccurred(env) == NULL ? 0 : 1; //根据是否有异常 确定退出码
+    LEAVE(); //线程解绑 销毁JVM
 }
 
 /*
@@ -1211,7 +1211,7 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
                    i, args.options[i].optionString);
     }
 
-    r = ifn->CreateJavaVM(pvm, (void **)penv, &args);
+    r = ifn->CreateJavaVM(pvm, (void **)penv, &args); //通过ifn的函数指针 调用CreateJavaVM函数初始化JavaVM 和 JNIEnv
     JLI_MemFree(options);
     return r == JNI_OK;
 }
@@ -1290,7 +1290,7 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
  */
 static jclass
 LoadMainClass(JNIEnv *env, int mode, char *name)
-{
+{   /* 主要是 LauncherHelper.checkAndLoadMain()方法加载mainClass并验证access是否合法 */
     jmethodID mid;
     jstring str;
     jobject result;
@@ -1316,12 +1316,12 @@ LoadMainClass(JNIEnv *env, int mode, char *name)
         printf("----%s----\n", JLDEBUG_ENV_ENTRY);
     }
 
-    return (jclass)result;
+    return (jclass)result; //得到main class
 }
 
 static jclass
 GetApplicationClass(JNIEnv *env)
-{
+{   /* 通过LauncherHelper.getApplicationClass() 获取 application class*/
     jmethodID mid;
     jobject result;
     jclass cls = GetLauncherHelperClass(env);
@@ -1973,7 +1973,6 @@ IsWildCardEnabled()
     return _wc_enabled;
 }
 
-//挂起当前线程 由JVM创建新线程 并由新线程负责执行
 int
 ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
                     int argc, char **argv,
@@ -1985,9 +1984,8 @@ ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
      * Note that HotSpot no longer supports JNI_VERSION_1_1 but it will
      * return its default stack size through the init args structure.
      */
-
-    //设置线程的栈深度 如果用户没有指定 则使用JVM默认值
-    if (threadStackSize == 0) {
+   
+    if (threadStackSize == 0) {  //设置线程的栈深度 如果用户没有指定 则使用默认值
       struct JDK1_1InitArgs args1_1;
       memset((void*)&args1_1, 0, sizeof(args1_1));
       args1_1.version = JNI_VERSION_1_1;
@@ -1997,9 +1995,10 @@ ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
       }
     }
 
-    //创建新线程 并用新线程执行main方法
-    { /* Create a new thread to create JVM and invoke main method */
-      JavaMainArgs args;
+    { /* 创建虚拟机线程并调用main方法 */
+
+
+      JavaMainArgs args;//封装main方法的参数
       int rslt;
 
       args.argc = argc;
@@ -2007,8 +2006,8 @@ ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
       args.mode = mode;
       args.what = what;
       args.ifn = *ifn;
-
-      rslt = ContinueInNewThread0(JavaMain, threadStackSize, (void*)&args);
+      
+      rslt = ContinueInNewThread0(JavaMain, threadStackSize, (void*)&args);//创建线程 并执行main方法
       /* If the caller has deemed there is an error we
        * simply return that, otherwise we return the value of
        * the callee
