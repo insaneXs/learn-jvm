@@ -471,7 +471,7 @@ JavaMain(void * _args)
 
     /* Build platform specific argument array */
     mainArgs = CreateApplicationArgs(env, argv, argc); //封装 main(String[] args) 方法的参数args
-    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);1
+    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
 
     /* Invoke main method. */
     (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs); //调用main(String args)方法
