@@ -3634,7 +3634,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   CompileBroker::compilation_init();
 #endif
 
-  if (EnableInvokeDynamic) { //加载动态代理相关的类文件
+  if (EnableInvokeDynamic) { //加载动态类型语言相关的类文件
     // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.
     // It is done after compilers are initialized, because otherwise compilations of
     // signature polymorphic MH intrinsics can be missed
